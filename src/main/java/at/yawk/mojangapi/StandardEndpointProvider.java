@@ -76,7 +76,8 @@ public class StandardEndpointProvider implements EndpointProvider {
         return new Endpoint<String, Profile>() {
             @Override
             public Profile call(String input) throws IOException, InterruptedException {
-                return callBatch(Collections.singletonList(input)).get(0);
+                List<Profile> batch = callBatch(Collections.singletonList(input));
+                return batch.isEmpty() ? null : batch.get(0);
             }
 
             @Override

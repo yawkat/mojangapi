@@ -29,7 +29,7 @@ public class NameHistory {
     @RequiredArgsConstructor
     public static class Entry {
         @Getter private final String name;
-        @Getter @Nullable private final Instant changeDate;
+        @Getter @Nullable private final Instant changedToAt;
 
         public Entry(String name) {
             this(name, null);
