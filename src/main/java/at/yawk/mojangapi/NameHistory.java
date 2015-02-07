@@ -6,10 +6,10 @@
 
 package at.yawk.mojangapi;
 
-import com.sun.istack.internal.Nullable;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
