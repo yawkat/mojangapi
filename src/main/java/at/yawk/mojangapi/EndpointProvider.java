@@ -6,6 +6,7 @@
 
 package at.yawk.mojangapi;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -19,4 +20,6 @@ public interface EndpointProvider {
     Endpoint<UUID, NameHistory> nameHistory();
 
     Endpoint<String, Profile> profileByName();
+
+    Endpoint<String, Profile> profileByName(Instant time);
 }

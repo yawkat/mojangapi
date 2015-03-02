@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -40,10 +41,12 @@ public class StandardEndpointProvider implements EndpointProvider {
     private final HttpProvider httpProvider;
     private final RateLimiter limiterNameHistory;
     private final RateLimiter limiterProfile;
+    private final RateLimiter limiterProfileBatch;
 
     public static EndpointProvider create(HttpProvider httpProvider) {
         return create(
                 httpProvider,
+                new StandardRateLimiter(600, 10, TimeUnit.MINUTES, StandardRateLimiter.Mode.CONSIDERATE),
                 new StandardRateLimiter(600, 10, TimeUnit.MINUTES, StandardRateLimiter.Mode.CONSIDERATE),
                 new StandardRateLimiter(600, 10, TimeUnit.MINUTES, StandardRateLimiter.Mode.CONSIDERATE)
         );
@@ -51,9 +54,10 @@ public class StandardEndpointProvider implements EndpointProvider {
 
     public static EndpointProvider create(HttpProvider httpProvider,
                                           RateLimiter limiterNameHistory,
-                                          RateLimiter limiterProfile) {
+                                          RateLimiter limiterProfile,
+                                          RateLimiter limiterProfileBatch) {
         Objects.requireNonNull(httpProvider);
-        return new StandardEndpointProvider(httpProvider, limiterNameHistory, limiterProfile);
+        return new StandardEndpointProvider(httpProvider, limiterNameHistory, limiterProfile, limiterProfileBatch);
     }
 
     @Override
@@ -110,7 +114,7 @@ public class StandardEndpointProvider implements EndpointProvider {
             public List<Profile> callBatch(List<String> inputs) throws IOException, InterruptedException {
                 List<Profile> result = new ArrayList<>(inputs.size());
                 for (int i = 0; i < inputs.size(); i += 100) {
-                    try (RateLimiter.RateClaim ignored = limiterProfile.claim()) {
+                    try (RateLimiter.RateClaim ignored = limiterProfileBatch.claim()) {
                         List<String> section = inputs.subList(i, Math.min(i + 100, inputs.size()));
                         try (InputStream is = httpProvider.post(
                                 new URL("https://api.mojang.com/profiles/minecraft"),
@@ -123,6 +127,21 @@ public class StandardEndpointProvider implements EndpointProvider {
                     }
                 }
                 return result;
+            }
+        };
+    }
+
+    @Override
+    public Endpoint<String, Profile> profileByName(Instant time) {
+        return input -> {
+            try (RateLimiter.RateClaim ignored = limiterProfile.claim()) {
+                URL url = new URL(
+                        "https://api.mojang.com/users/profiles/minecraft/" + URLEncoder.encode(input, "UTF-8") +
+                        "?at=" + time.getEpochSecond()
+                );
+                try (InputStream is = httpProvider.get(url)) {
+                    return GSON.fromJson(new InputStreamReader(is, CHARSET), Profile.class);
+                }
             }
         };
     }
