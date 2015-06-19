@@ -21,5 +21,7 @@ public interface EndpointProvider {
 
     Endpoint<String, Profile> profileByName();
 
+    Endpoint<UUID, Profile> profileById();
+
     Endpoint<String, Profile> profileByName(Instant time);
 }

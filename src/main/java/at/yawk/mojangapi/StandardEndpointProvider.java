@@ -132,6 +132,18 @@ public class StandardEndpointProvider implements EndpointProvider {
     }
 
     @Override
+    public Endpoint<UUID, Profile> profileById() {
+        return input -> {
+            URL url = new URL(
+                    " https://sessionserver.mojang.com/session/minecraft/profile/" + input.toString()
+            );
+            try (InputStream is = httpProvider.get(url)) {
+                return GSON.fromJson(new InputStreamReader(is, CHARSET), Profile.class);
+            }
+        };
+    }
+
+    @Override
     public Endpoint<String, Profile> profileByName(Instant time) {
         return input -> {
             try (RateLimiter.RateClaim ignored = limiterProfile.claim()) {
